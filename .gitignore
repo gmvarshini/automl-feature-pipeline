@@ -1,0 +1,23 @@
+# Environment variables
+.env
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Trained model artifacts (kept out of version control when large)
+models/*.pkl
+models/*.joblib
+models/*.json
+!models/.gitkeep
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
