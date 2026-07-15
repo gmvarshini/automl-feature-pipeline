@@ -1,5 +1,12 @@
 FROM python:3.11-slim
 
+# LightGBM and XGBoost link against the OpenMP runtime at import time, so the
+# slim base needs libgomp1. Without it, unpickling a FLAML/LightGBM model at
+# serve time fails with "libgomp.so.1: cannot open shared object file".
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install UV, the fast dependency manager, from its official static binary.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
