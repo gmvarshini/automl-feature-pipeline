@@ -122,7 +122,7 @@ link against the OpenMP runtime (`libgomp.so.1`) at import time, and the slim
 base image does not ship it. Without this package, unpickling the FLAML selected
 model inside the `/predict` handler fails with `libgomp.so.1: cannot open shared
 object file`, returning a `500` while `/health` still reports `200` because it
-never loads the model.
+never loads the model. See commit `53aef60` for the fix.
 
 ```bash
 # 1. Train a model on the host (writes models/model.pkl).
