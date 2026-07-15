@@ -117,6 +117,13 @@ dependencies, and serves the API on port 8000. `docker-compose.yml` mounts the
 `models/` directory as a volume so a model trained on the host is served without
 rebuilding the image.
 
+The image also installs the `libgomp1` system package. LightGBM and XGBoost
+link against the OpenMP runtime (`libgomp.so.1`) at import time, and the slim
+base image does not ship it. Without this package, unpickling the FLAML selected
+model inside the `/predict` handler fails with `libgomp.so.1: cannot open shared
+object file`, returning a `500` while `/health` still reports `200` because it
+never loads the model.
+
 ```bash
 # 1. Train a model on the host (writes models/model.pkl).
 uv run python -m src.main train
