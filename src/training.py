@@ -2,9 +2,9 @@
 
 This module loads the raw dataset, applies the stateless feature engineering
 from :mod:`src.feature_engineering`, and hands the result to FLAML, which
-searches across several model families (LightGBM, XGBoost, random forests,
-extra trees, and more) within a fixed time budget to select the best
-configuration. The fitted model and a JSON metadata record are written to disk.
+searches across several model families (LightGBM, XGBoost, random forests, and
+extra trees) within a fixed time budget to select the best configuration. The
+fitted model and a JSON metadata record are written to disk.
 """
 
 from __future__ import annotations
