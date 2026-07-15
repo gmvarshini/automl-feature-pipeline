@@ -1,0 +1,17 @@
+services:
+  api:
+    build: .
+    image: automl-feature-pipeline
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Persist and share trained model artifacts between the host and the
+      # container so a model trained on the host is served without a rebuild.
+      - ./models:/app/models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
