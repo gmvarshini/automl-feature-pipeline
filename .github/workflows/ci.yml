@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Lint and unit tests. test_serve.py trains a quick 10 second model first.
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Lint with ruff
+        run: uv run ruff check .
+
+      - name: Run tests
+        run: uv run pytest
+
+  # Container smoke test: build the image with Docker Compose, start it, and
+  # send a real prediction. This is the check that would have caught the
+  # missing libgomp1 library, because /health alone returned 200 while
+  # /predict failed with 500.
+  container:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Train a quick model on the runner
+        run: |
+          uv sync --no-dev
+          AUTOML_TIME_BUDGET_SECONDS=10 uv run python -m src.main train
+
+      - name: Start the API with Docker Compose
+        run: |
+          cp .env.example .env
+          docker compose up --build --detach
+
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 30); do
+            curl --silent --fail http://localhost:8000/health && exit 0
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+
+      - name: Send a real prediction to /predict
+        run: |
+          curl --silent --show-error --fail -X POST http://localhost:8000/predict \
+            -H "Content-Type: application/json" \
+            -d '{"gender": "Female", "SeniorCitizen": 0, "Partner": "Yes",
+                 "Dependents": "No", "tenure": 5, "PhoneService": "Yes",
+                 "MultipleLines": "No", "InternetService": "Fiber optic",
+                 "OnlineSecurity": "No", "OnlineBackup": "No",
+                 "DeviceProtection": "No", "TechSupport": "No",
+                 "StreamingTV": "Yes", "StreamingMovies": "Yes",
+                 "Contract": "Month-to-month", "PaperlessBilling": "Yes",
+                 "PaymentMethod": "Electronic check", "MonthlyCharges": 89.9,
+                 "TotalCharges": 450.5}'
+
+      - name: Show container logs if anything failed
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop the containers
+        if: always()
+        run: docker compose down
