@@ -141,6 +141,23 @@ To train inside the container instead, run:
 docker compose run --rm api uv run python -m src.main train
 ```
 
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request to `main` with
+two jobs:
+
+1. **test**: install with uv, lint with ruff, and run pytest (the API tests
+   train a quick 10 second model first).
+2. **container**: train a quick model, start the real container with
+   `docker compose up --build`, wait for `/health`, then send a real request to
+   `/predict` and fail if it does not return `200`.
+
+The second job exists because of a real bug in this project. When the
+`libgomp1` package was missing, `/health` still returned `200` but every
+`/predict` call failed with `500`. A health check that never loads the model
+cannot catch that, so the pipeline now tests a real prediction inside the
+container.
+
 ## Example prediction request
 
 ```bash
